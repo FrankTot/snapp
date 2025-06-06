@@ -1,6 +1,6 @@
 import os
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTextEdit, QLineEdit
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit
 )
 from PyQt6.QtCore import Qt
 from core.report_generator import PDFReport
@@ -36,12 +36,11 @@ class MainGUI(QWidget):
 
         pdf = PDFReport(title=title)
         pdf.generate_full_report()
-        output_path = "report.pdf"
+        output_path = os.path.join("reports", "report.pdf")
         pdf.output(output_path)
 
         self.status_label.setText(f"Report generated: {output_path}")
 
-        # Open PDF with default viewer (Linux)
         try:
             subprocess.Popen(['xdg-open', output_path])
         except Exception as e:
