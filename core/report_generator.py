@@ -1,6 +1,6 @@
 from fpdf import FPDF
 from datetime import datetime
-from .system_snapshot import get_active_services, get_logged_in_users, get_open_ports, get_recent_etc_modifications
+from .system_snapshot import get_active_services, get_logged_users, get_open_ports, get_recent_etc_modifications
 
 class PDFReport(FPDF):
     def __init__(self, filename=None):
@@ -30,7 +30,7 @@ class PDFReport(FPDF):
 
     def generate_full_report(self):
         self.add_section("Active Services", get_active_services())
-        self.add_section("Logged In Users", get_logged_in_users())
+        self.add_section("Logged In Users", get_logged_users())
         self.add_section("Open Ports", get_open_ports())
         self.add_section("Recent /etc Modifications", get_recent_etc_modifications())
 
