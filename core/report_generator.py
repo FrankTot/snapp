@@ -10,9 +10,10 @@ import os
 import urllib.request
 
 class PDFReport:
-    def __init__(self, title="Audit Report", filename="reports/report.pdf"):
-        self.title = title
-        self.filename = filename
+    def __init__(self, filename=None):
+        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.title = f"Audit Report - {now}"
+        self.filename = filename or f"reports/report_{now}.pdf"
         self.pdf = FPDF()
         self.pdf.add_page()
         self.pdf.set_auto_page_break(auto=True, margin=15)
@@ -26,9 +27,13 @@ class PDFReport:
         if not os.path.exists(font_path):
             os.makedirs(font_dir, exist_ok=True)
             print("Scarico font Unicode DejaVuSans...")
-            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
-            urllib.request.urlretrieve(url, font_path)
-            print("Font scaricato con successo.")
+            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
+            try:
+                urllib.request.urlretrieve(url, font_path)
+                print("Font scaricato con successo.")
+            except Exception as e:
+                print("Errore durante il download del font:", e)
+                raise
 
         self.pdf.add_font("DejaVu", "", font_path, uni=True)
         self.pdf.set_font("DejaVu", "", 14)
