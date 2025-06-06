@@ -28,21 +28,22 @@ class PDFReport:
         if not os.path.exists(font_path):
             os.makedirs(font_dir, exist_ok=True)
             print("Scarico font Unicode DejaVuSans...")
-            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
             try:
+                url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
                 urllib.request.urlretrieve(url, font_path)
                 print("Font scaricato con successo.")
             except Exception as e:
-                print("Errore durante il download del font:", e)
-                raise
+                print(f"Errore durante il download del font: {e}")
 
         self.pdf.add_font("DejaVu", "", font_path, uni=True)
-        self.pdf.set_font("DejaVu", "", 14)
+        self.pdf.set_font("DejaVu", size=12)
 
     def _add_header(self):
         self.pdf.set_font("DejaVu", "B", 16)
-        title = f"Audit Report - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        self.pdf.cell(0, 10, title, ln=True, align="C")
+        self.pdf.cell(0, 10, "SnapAudit Report", ln=True, align="C")
+        self.pdf.set_font("DejaVu", "", 12)
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.pdf.cell(0, 10, f"Data report: {now}", ln=True, align="C")
         self.pdf.ln(10)
 
     def add_section(self, title, content):
@@ -53,7 +54,7 @@ class PDFReport:
         self.pdf.ln(5)
 
     def generate_full_report(self):
-        self.add_section("Active Services", get_active_services())
-        self.add_section("Logged Users", get_logged_users())
-        self.add_section("Open Ports", get_open_ports())
-        self.add_section("Recent /etc Modifications", get_recent_etc_modifications())
+        self.add_section("Servizi Attivi", get_active_services())
+        self.add_section("Utenti Loggati", get_logged_users())
+        self.add_section("Porte Aperte", get_open_ports())
+        self.add_section("Modifiche Recenti in /etc", get_recent_etc_modifications())
