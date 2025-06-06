@@ -1,54 +1,41 @@
-import os
+import sys
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox
 )
-from PyQt6.QtCore import Qt
 from core.report_generator import PDFReport
-import subprocess
+from gui.pdf_viewer import open_pdf
+import os
 
-class MainGUI(QWidget):
+class AuditGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("SnapAudit GUI")
-        self.setGeometry(100, 100, 800, 600)
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        self.setWindowTitle("SnapAudit - GUI")
+        self.setFixedSize(400, 200)
 
-        self.title_label = QLabel("Report Title:")
-        self.layout.addWidget(self.title_label)
+        layout = QVBoxLayout()
 
-        self.title_input = QLineEdit()
-        self.title_input.setPlaceholderText("Enter report title")
-        self.layout.addWidget(self.title_input)
+        self.label = QLabel("Clicca il bottone per generare un PDF Audit", self)
+        layout.addWidget(self.label)
 
-        self.generate_btn = QPushButton("Generate PDF Report")
-        self.generate_btn.clicked.connect(self.generate_pdf)
-        self.layout.addWidget(self.generate_btn)
+        self.button = QPushButton("Genera Report PDF")
+        self.button.clicked.connect(self.generate_pdf)
+        layout.addWidget(self.button)
 
-        self.status_label = QLabel("")
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.status_label)
+        self.setLayout(layout)
 
     def generate_pdf(self):
-        title = self.title_input.text() or "Audit Report"
-        self.status_label.setText("Generating report...")
-        QApplication.processEvents()  # update UI
-
-        pdf = PDFReport(title=title)
-        pdf.generate_full_report()
-        output_path = os.path.join("reports", "report.pdf")
-        pdf.output(output_path)
-
-        self.status_label.setText(f"Report generated: {output_path}")
-
         try:
-            subprocess.Popen(['xdg-open', output_path])
+            print("Generazione report in corso...")
+            pdf = PDFReport()
+            pdf.generate_full_report()
+            filename = "reports/report.pdf"
+            pdf.output(filename)
+            open_pdf(filename)
         except Exception as e:
-            self.status_label.setText(f"Report saved but failed to open PDF viewer: {e}")
+            QMessageBox.critical(self, "Errore", str(e))
 
-if __name__ == "__main__":
-    import sys
+def run_gui():
     app = QApplication(sys.argv)
-    window = MainGUI()
+    window = AuditGUI()
     window.show()
     sys.exit(app.exec())
