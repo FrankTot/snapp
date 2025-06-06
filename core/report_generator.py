@@ -1,35 +1,49 @@
+import os
 from fpdf import FPDF
 from datetime import datetime
-import os
+from .system_snapshot import get_active_services, get_logged_in_users, get_open_ports, get_recent_etc_changes
 
 class PDFReport:
-    def __init__(self, title="SnapAudit Report", output_path="reports/report.pdf"):
-        self.title = title
-        self.output_path = output_path
+    def __init__(self, title="Audit Report"):
         self.pdf = FPDF()
-        self.pdf.set_auto_page_break(auto=True, margin=15)
         self.pdf.add_page()
+        self.title = title
         self._add_header()
+        self._add_title()
+        self._add_date()
 
     def _add_header(self):
-        if os.path.exists("assets/logo.png"):
-            self.pdf.image("assets/logo.png", 10, 8, 33)
-        self.pdf.set_font("Helvetica", 'B', 16)
-        self.pdf.cell(0, 10, self.title, ln=True, align="C")
-        self.pdf.set_font("Helvetica", '', 12)
-        self.pdf.cell(0, 10, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align="C")
+        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'logo.png')
+        if os.path.exists(logo_path):
+            self.pdf.image(logo_path, 10, 8, 33)
+        self.pdf.set_font("Arial", "B", 12)
+        self.pdf.cell(0, 10, "SnapAudit Report", 0, 1, "R")
+        self.pdf.ln(20)
+
+    def _add_title(self):
+        self.pdf.set_font("Arial", "B", 16)
+        self.pdf.cell(0, 10, self.title, 0, 1, "C")
         self.pdf.ln(10)
 
-    def add_section(self, title, content):
-        self.pdf.set_font("Helvetica", 'B', 14)
-        self.pdf.set_text_color(30, 30, 30)
-        self.pdf.cell(0, 10, title, ln=True)
-        self.pdf.set_font("Helvetica", '', 12)
-        self.pdf.set_text_color(80, 80, 80)
-        self.pdf.multi_cell(0, 10, content)
-        self.pdf.ln(5)
+    def _add_date(self):
+        self.pdf.set_font("Arial", "", 12)
+        date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.pdf.cell(0, 10, f"Generated on: {date_str}", 0, 1, "C")
+        self.pdf.ln(10)
 
-    def save(self):
-        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
-        self.pdf.output(self.output_path)
-        return self.output_path
+    def add_section(self, header, content):
+        self.pdf.set_font("Arial", "B", 14)
+        self.pdf.cell(0, 10, header, 0, 1)
+        self.pdf.set_font("Arial", "", 11)
+        self.pdf.multi_cell(0, 8, content)
+        self.pdf.ln(8)
+
+    def generate_full_report(self):
+        # Aggiungi sezioni dal sistema
+        self.add_section("Active Services", get_active_services())
+        self.add_section("Logged In Users", get_logged_in_users())
+        self.add_section("Open Ports", get_open_ports())
+        self.add_section("Recent Changes in /etc (last 24h)", get_recent_etc_changes())
+
+    def output(self, filename):
+        self.pdf.output(filename)
