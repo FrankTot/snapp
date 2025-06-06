@@ -1,1 +1,1 @@
-svd
+print("Modulo Core caricato")
