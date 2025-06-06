@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import (
     QFileDialog, QListWidget, QMessageBox, QHBoxLayout
 )
 from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
+
 from core.report_generator import PDFReport
 from core.system_snapshot import get_reports_list
 import subprocess
@@ -12,8 +14,8 @@ import subprocess
 class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("SnapAudit GUI")
-        self.resize(900, 600)
+        self.setWindowTitle("SnapAudit - Sistema di Audit")
+        self.setGeometry(100, 100, 800, 600)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -21,61 +23,75 @@ class MainGUI(QWidget):
 
         # Logo
         logo_label = QLabel()
-        logo_path = os.path.join("assets", "logo.png")
-        if os.path.exists(logo_path):
-            pixmap = QPixmap(logo_path).scaledToWidth(180)
-            logo_label.setPixmap(pixmap)
-            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(logo_label)
+        pixmap = QPixmap("assets/logo.png")
+        if pixmap.isNull():
+            logo_label.setText("Logo non trovato")
+        else:
+            scaled_pixmap = pixmap.scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(logo_label)
 
-        self.status_label = QLabel("Pronto per generare report.")
-        layout.addWidget(self.status_label)
-
-        btn_layout = QHBoxLayout()
-        self.generate_btn = QPushButton("Genera Report PDF")
-        self.generate_btn.clicked.connect(self.generate_pdf)
-        btn_layout.addWidget(self.generate_btn)
-
-        self.open_btn = QPushButton("Visualizza Report Selezionato")
-        self.open_btn.clicked.connect(self.open_selected_report)
-        btn_layout.addWidget(self.open_btn)
-
-        layout.addLayout(btn_layout)
-
+        # Lista report precedenti
         self.report_list = QListWidget()
+        self._load_report_list()
         layout.addWidget(self.report_list)
-        self.load_reports()
+
+        # Bottoni
+        button_layout = QHBoxLayout()
+
+        self.generate_btn = QPushButton("Genera Report")
+        self.generate_btn.clicked.connect(self.generate_pdf)
+        button_layout.addWidget(self.generate_btn)
+
+        self.view_btn = QPushButton("Visualizza Report Selezionato")
+        self.view_btn.clicked.connect(self.view_selected_report)
+        button_layout.addWidget(self.view_btn)
+
+        layout.addLayout(button_layout)
 
         self.setLayout(layout)
 
-    def load_reports(self):
+    def _load_report_list(self):
         self.report_list.clear()
         reports = get_reports_list()
-        for rpt in sorted(reports, reverse=True):
-            self.report_list.addItem(rpt)
+        if reports:
+            for rpt in reports:
+                self.report_list.addItem(rpt)
+        else:
+            self.report_list.addItem("Nessun report trovato")
 
     def generate_pdf(self):
         try:
-            pdf = PDFReport()
-            filename = pdf.generate_full_report()
-            self.status_label.setText(f"Report generato: {filename}")
-            self.load_reports()
+            filename = None  # Lasciamo che il PDFReport crei il nome con data/ora
+            pdf = PDFReport(filename=filename)
+            pdf.generate_full_report()
+            self._load_report_list()
+            QMessageBox.information(self, "Successo", "Report generato correttamente!")
         except Exception as e:
-            QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{e}")
+            QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
 
-    def open_selected_report(self):
+    def view_selected_report(self):
         selected = self.report_list.currentItem()
-        if not selected:
+        if not selected or "Nessun report trovato" in selected.text():
             QMessageBox.warning(self, "Attenzione", "Seleziona un report dalla lista.")
             return
-        filename = os.path.join("reports", selected.text())
-        if os.name == "posix":
-            try:
-                subprocess.run(["xdg-open", filename], check=True)
-            except Exception as e:
-                QMessageBox.warning(self, "Errore", f"Impossibile aprire il file:\n{e}")
-        else:
-            QMessageBox.warning(self, "Errore", "Questa funzione è disponibile solo su sistemi GNU/Linux.")
+        report_path = os.path.join("reports", selected.text())
+        if not os.path.exists(report_path):
+            QMessageBox.warning(self, "Errore", "File report non trovato.")
+            return
+        try:
+            if sys.platform.startswith('linux'):
+                subprocess.run(['xdg-open', report_path], check=False)
+            elif sys.platform == 'win32':
+                os.startfile(report_path)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', report_path], check=False)
+            else:
+                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato per l'apertura automatica del PDF.")
+        except Exception as e:
+            QMessageBox.critical(self, "Errore", f"Errore nell'aprire il report:\n{str(e)}")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
