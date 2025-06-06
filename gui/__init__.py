@@ -1,1 +1,1 @@
-ss
+print("Modulo GUI caricato")
