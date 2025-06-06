@@ -1,16 +1,17 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QMessageBox
-from core.report_generator import PDFReport
-from gui.pdf_viewer import open_pdf
 import sys
-import os
-from datetime import datetime
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox
+)
+from core.report_generator import PDFReport
 
 class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("SnapAudit - Linux System Snapshot Tool")
-        self.setGeometry(100, 100, 400, 200)
+        self.setWindowTitle("SnapAudit")
+        self.setGeometry(100, 100, 600, 400)
         self.layout = QVBoxLayout()
+        self.label = QLabel("Premi il pulsante per generare il report.")
+        self.layout.addWidget(self.label)
 
         self.generate_button = QPushButton("Genera Report PDF")
         self.generate_button.clicked.connect(self.generate_pdf)
@@ -20,19 +21,17 @@ class MainGUI(QWidget):
 
     def generate_pdf(self):
         try:
-            now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            title = f"Audit Report - {now}"
-            filename = f"reports/report_{now}.pdf"
+            filename = "reports/audit_report.pdf"
             pdf = PDFReport(filename=filename)
-            pdf.generate_full_report()
             QMessageBox.information(self, "Successo", f"Report generato: {filename}")
-            open_pdf(filename)
         except Exception as e:
-            QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
+            QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{e}")
 
-if __name__ == "__main__":
-    print("Modulo GUI caricato")
+def main():
     app = QApplication(sys.argv)
     window = MainGUI()
     window.show()
     sys.exit(app.exec())
+    
+if __name__ == "__main__":
+    main()
