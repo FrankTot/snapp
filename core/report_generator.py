@@ -6,7 +6,7 @@ class PDFReport(FPDF):
     def __init__(self, filename=None):
         super().__init__()
         self.set_auto_page_break(auto=True, margin=15)
-        self.set_font("Helvetica", size=12)  # Font base senza add_font
+        self.set_font("Helvetica", size=12)
 
         self.add_page()
         self._add_header()
@@ -22,6 +22,9 @@ class PDFReport(FPDF):
         self.ln(10)
 
     def add_section(self, title, content):
+        # Se content è lista, trasformala in stringa
+        if isinstance(content, list):
+            content = "\n".join(content)
         self.set_font("Helvetica", "B", 14)
         self.cell(0, 10, title, 0, 1)
         self.set_font("Helvetica", size=12)
