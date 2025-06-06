@@ -23,7 +23,7 @@ class MainGUI(QWidget):
             now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             title = f"Audit Report - {now}"
             filename = f"reports/report_{now}.pdf"
-            pdf = PDFReport(title=title, filename=filename)
+            pdf = PDFReport(filename=filename)
             pdf.generate_full_report()
             QMessageBox.information(self, "Successo", f"Report generato: {filename}")
             open_pdf(filename)
