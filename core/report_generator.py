@@ -1,6 +1,4 @@
-import os
 import datetime
-import urllib.request
 from fpdf import FPDF
 from .system_snapshot import (
     get_active_services,
@@ -15,42 +13,27 @@ class PDFReport:
         self.pdf.set_auto_page_break(auto=True, margin=15)
         self.filename = filename
         self.pdf.add_page()
-        self._prepare_font()
+        self.pdf.set_font("Helvetica", size=12)  # Font standard senza problemi
         self._add_header()
         self.generate_full_report()
         self.pdf.output(self.filename)
         print(f"Report salvato in {self.filename}")
 
-    def _prepare_font(self):
-        font_dir = "assets/fonts"
-        font_path = os.path.join(font_dir, "DejaVuSans.ttf")
-
-        if not os.path.exists(font_path):
-            os.makedirs(font_dir, exist_ok=True)
-            print("Scarico font Unicode DejaVuSans...")
-            try:
-                url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
-                urllib.request.urlretrieve(url, font_path)
-                print("Font scaricato con successo.")
-            except Exception as e:
-                print(f"Errore durante il download del font: {e}")
-
-        self.pdf.add_font("DejaVu", "", font_path, uni=True)
-        self.pdf.set_font("DejaVu", size=12)
-
     def _add_header(self):
-        self.pdf.set_font("DejaVu", "B", 16)
+        self.pdf.set_font("Helvetica", "B", 16)
         self.pdf.cell(0, 10, "SnapAudit Report", ln=True, align="C")
-        self.pdf.set_font("DejaVu", "", 12)
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.pdf.set_font("Helvetica", "", 12)
         self.pdf.cell(0, 10, f"Data report: {now}", ln=True, align="C")
         self.pdf.ln(10)
 
     def add_section(self, title, content):
-        self.pdf.set_font("DejaVu", "B", 14)
+        self.pdf.set_font("Helvetica", "B", 14)
         self.pdf.cell(0, 10, title, ln=True)
-        self.pdf.set_font("DejaVu", "", 12)
-        self.pdf.multi_cell(0, 8, content)
+        self.pdf.set_font("Helvetica", "", 12)
+        # Rimuoviamo caratteri che non supporta Helvetica
+        safe_content = content.encode('ascii', errors='ignore').decode('ascii')
+        self.pdf.multi_cell(0, 8, safe_content)
         self.pdf.ln(5)
 
     def generate_full_report(self):
