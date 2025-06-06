@@ -1,14 +1,22 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtCore import QUrl
+import subprocess
+import platform
 import os
 
-class PDFViewer(QWidget):
-    def __init__(self, pdf_path):
-        super().__init__()
-        layout = QVBoxLayout()
-        self.web_view = QWebEngineView()
-        abs_path = os.path.abspath(pdf_path)
-        self.web_view.load(QUrl.fromLocalFile(abs_path))
-        layout.addWidget(self.web_view)
-        self.setLayout(layout)
+def open_pdf(filepath):
+    if not os.path.exists(filepath):
+        print(f"Il file {filepath} non esiste.")
+        return
+
+    system_platform = platform.system()
+
+    try:
+        if system_platform == "Linux":
+            subprocess.Popen(["xdg-open", filepath])
+        elif system_platform == "Darwin":  # macOS
+            subprocess.Popen(["open", filepath])
+        elif system_platform == "Windows":
+            os.startfile(filepath)
+        else:
+            print(f"Sistema non supportato per l'apertura automatica: {system_platform}")
+    except Exception as e:
+        print(f"Errore nell'apertura del PDF: {str(e)}")
