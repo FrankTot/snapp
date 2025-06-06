@@ -39,7 +39,6 @@ class PDFReport:
         self.pdf.ln(8)
 
     def generate_full_report(self):
-        # Aggiungi sezioni dal sistema
         self.add_section("Active Services", get_active_services())
         self.add_section("Logged In Users", get_logged_in_users())
         self.add_section("Open Ports", get_open_ports())
