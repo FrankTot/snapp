@@ -7,6 +7,7 @@ from core.system_snapshot import (
     get_recent_etc_modifications,
 )
 import os
+import urllib.request
 
 class PDFReport:
     def __init__(self, title="Audit Report", filename="reports/report.pdf"):
@@ -15,13 +16,20 @@ class PDFReport:
         self.pdf = FPDF()
         self.pdf.add_page()
         self.pdf.set_auto_page_break(auto=True, margin=15)
-        self._add_unicode_font()
+        self._prepare_font()
         self._add_header()
 
-    def _add_unicode_font(self):
-        font_path = "assets/fonts/DejaVuSans.ttf"
+    def _prepare_font(self):
+        font_dir = "assets/fonts"
+        font_path = os.path.join(font_dir, "DejaVuSans.ttf")
+
         if not os.path.exists(font_path):
-            raise FileNotFoundError("Font DejaVuSans.ttf non trovato in assets/fonts/")
+            os.makedirs(font_dir, exist_ok=True)
+            print("Scarico font Unicode DejaVuSans...")
+            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
+            urllib.request.urlretrieve(url, font_path)
+            print("Font scaricato con successo.")
+
         self.pdf.add_font("DejaVu", "", font_path, uni=True)
         self.pdf.set_font("DejaVu", "", 14)
 
