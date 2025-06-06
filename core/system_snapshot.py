@@ -1,63 +1,65 @@
 import subprocess
 import os
-import time
 from datetime import datetime, timedelta
 
 def get_active_services():
     try:
-        result = subprocess.run(
-            ["systemctl", "list-units", "--type=service", "--state=running", "--no-pager", "--no-legend"],
-            capture_output=True, text=True, check=True
-        )
-        services = [line.split()[0] for line in result.stdout.strip().split('\n') if line]
-        return "\n".join(services) if services else "Nessun servizio attivo trovato."
+        output = subprocess.check_output(["systemctl", "list-units", "--type=service", "--state=running", "--no-pager", "--no-legend"], text=True)
+        services = []
+        for line in output.strip().split('\n'):
+            parts = line.split()
+            if parts:
+                services.append({"Service": parts[0], "Description": " ".join(parts[4:])})
+        return services
     except Exception as e:
-        return f"Errore nel recupero servizi attivi: {e}"
+        return [{"Service": "Errore", "Description": str(e)}]
 
 def get_logged_users():
     try:
-        result = subprocess.run(
-            ["who"], capture_output=True, text=True, check=True
-        )
-        users = set()
-        for line in result.stdout.strip().split('\n'):
-            if line:
-                users.add(line.split()[0])
-        return "\n".join(sorted(users)) if users else "Nessun utente loggato."
+        output = subprocess.check_output(["who"], text=True)
+        users = []
+        for line in output.strip().split('\n'):
+            parts = line.split()
+            if parts:
+                users.append({"User": parts[0], "TTY": parts[1], "Login Time": parts[2] + " " + parts[3]})
+        return users
     except Exception as e:
-        return f"Errore nel recupero utenti loggati: {e}"
+        return [{"User": "Errore", "TTY": "", "Login Time": str(e)}]
 
 def get_open_ports():
     try:
-        # Richiede net-tools o iproute2, usa ss qui
-        result = subprocess.run(
-            ["ss", "-tuln"], capture_output=True, text=True, check=True
-        )
+        output = subprocess.check_output(["ss", "-tuln"], text=True)
         ports = []
-        for line in result.stdout.strip().split('\n')[1:]:
+        lines = output.strip().split('\n')
+        for line in lines[1:]:
             parts = line.split()
             if len(parts) >= 5:
-                ports.append(parts[4])
-        return "\n".join(ports) if ports else "Nessuna porta aperta trovata."
+                proto = parts[0]
+                local_address = parts[4]
+                ports.append({"Proto": proto, "Local Address": local_address})
+        return ports
     except Exception as e:
-        return f"Errore nel recupero porte aperte: {e}"
+        return [{"Proto": "Errore", "Local Address": str(e)}]
 
 def get_recent_etc_modifications(days=7):
     try:
-        cutoff = time.time() - days * 86400
-        modified_files = []
-        for root, dirs, files in os.walk("/etc"):
-            for file in files:
-                path = os.path.join(root, file)
+        cutoff = datetime.now() - timedelta(days=days)
+        files = []
+        for root, _, filenames in os.walk("/etc"):
+            for f in filenames:
+                path = os.path.join(root, f)
                 try:
-                    mtime = os.path.getmtime(path)
+                    mtime = datetime.fromtimestamp(os.path.getmtime(path))
                     if mtime > cutoff:
-                        modified_files.append(f"{path} - modificato il {datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')}")
-                except Exception:
+                        files.append({"File": path, "Last Modified": mtime.strftime("%Y-%m-%d %H:%M:%S")})
+                except:
                     continue
-        if modified_files:
-            return "\n".join(modified_files)
-        else:
-            return f"Nessuna modifica nei file /etc negli ultimi {days} giorni."
+        return files if files else [{"File": "Nessuna modifica recente", "Last Modified": ""}]
     except Exception as e:
-        return f"Errore nel recupero modifiche /etc: {e}"
+        return [{"File": "Errore", "Last Modified": str(e)}]
+
+def get_reports_list():
+    folder = "reports"
+    if not os.path.exists(folder):
+        return []
+    return [f for f in os.listdir(folder) if f.endswith(".pdf")]
