@@ -1,48 +1,47 @@
 import os
-from fpdf import FPDF
 from datetime import datetime
-from .system_snapshot import get_active_services, get_logged_in_users, get_open_ports, get_recent_etc_changes
+from fpdf import FPDF
+from .system_snapshot import (
+    get_active_services,
+    get_logged_in_users,
+    get_open_ports,
+    get_recent_etc_modifications
+)
 
 class PDFReport:
-    def __init__(self, title="Audit Report"):
+    def __init__(self):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.title = f"Audit Report - {now}"
         self.pdf = FPDF()
+        self.pdf.set_auto_page_break(auto=True, margin=15)
         self.pdf.add_page()
-        self.title = title
+        self.pdf.set_font("Helvetica", "B", 16)
         self._add_header()
-        self._add_title()
-        self._add_date()
 
     def _add_header(self):
-        logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'logo.png')
-        if os.path.exists(logo_path):
-            self.pdf.image(logo_path, 10, 8, 33)
-        self.pdf.set_font("Arial", "B", 12)
-        self.pdf.cell(0, 10, "SnapAudit Report", 0, 1, "R")
+        if os.path.exists("assets/logo.png"):
+            self.pdf.image("assets/logo.png", 10, 8, 33)
+        self.pdf.set_font("Helvetica", "B", 16)
+        self.pdf.cell(80)
+        self.pdf.cell(30, 10, self.title, 0, 0, "C")
         self.pdf.ln(20)
 
-    def _add_title(self):
-        self.pdf.set_font("Arial", "B", 16)
-        self.pdf.cell(0, 10, self.title, 0, 1, "C")
-        self.pdf.ln(10)
+    def add_section(self, title, content):
+        self.pdf.set_font("Helvetica", "B", 14)
+        self.pdf.cell(0, 10, title, ln=True)
+        self.pdf.set_font("Helvetica", "", 12)
 
-    def _add_date(self):
-        self.pdf.set_font("Arial", "", 12)
-        date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.pdf.cell(0, 10, f"Generated on: {date_str}", 0, 1, "C")
-        self.pdf.ln(10)
+        # Rimuove caratteri non compatibili
+        content = content.replace("→", "->")
 
-    def add_section(self, header, content):
-        self.pdf.set_font("Arial", "B", 14)
-        self.pdf.cell(0, 10, header, 0, 1)
-        self.pdf.set_font("Arial", "", 11)
         self.pdf.multi_cell(0, 8, content)
-        self.pdf.ln(8)
+        self.pdf.ln()
 
     def generate_full_report(self):
         self.add_section("Active Services", get_active_services())
         self.add_section("Logged In Users", get_logged_in_users())
         self.add_section("Open Ports", get_open_ports())
-        self.add_section("Recent Changes in /etc (last 24h)", get_recent_etc_changes())
+        self.add_section("Recent Changes in /etc", get_recent_etc_modifications())
 
     def output(self, filename):
         self.pdf.output(filename)
