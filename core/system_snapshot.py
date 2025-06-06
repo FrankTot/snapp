@@ -1,45 +1,63 @@
 import subprocess
 import os
-import pwd
+import time
 from datetime import datetime, timedelta
 
 def get_active_services():
     try:
-        output = subprocess.check_output(["systemctl", "list-units", "--type=service", "--state=running"], text=True)
-        return output
-    except subprocess.CalledProcessError:
-        return "Errore durante il recupero dei servizi attivi."
+        result = subprocess.run(
+            ["systemctl", "list-units", "--type=service", "--state=running", "--no-pager", "--no-legend"],
+            capture_output=True, text=True, check=True
+        )
+        services = [line.split()[0] for line in result.stdout.strip().split('\n') if line]
+        return "\n".join(services) if services else "Nessun servizio attivo trovato."
+    except Exception as e:
+        return f"Errore nel recupero servizi attivi: {e}"
 
-def get_logged_in_users():
+def get_logged_users():
     try:
-        output = subprocess.check_output(["who"], text=True)
-        return output
-    except subprocess.CalledProcessError:
-        return "Errore durante il recupero degli utenti loggati."
+        result = subprocess.run(
+            ["who"], capture_output=True, text=True, check=True
+        )
+        users = set()
+        for line in result.stdout.strip().split('\n'):
+            if line:
+                users.add(line.split()[0])
+        return "\n".join(sorted(users)) if users else "Nessun utente loggato."
+    except Exception as e:
+        return f"Errore nel recupero utenti loggati: {e}"
 
 def get_open_ports():
     try:
-        output = subprocess.check_output(["ss", "-tuln"], text=True)
-        return output
-    except subprocess.CalledProcessError:
-        return "Errore durante il recupero delle porte aperte."
+        # Richiede net-tools o iproute2, usa ss qui
+        result = subprocess.run(
+            ["ss", "-tuln"], capture_output=True, text=True, check=True
+        )
+        ports = []
+        for line in result.stdout.strip().split('\n')[1:]:
+            parts = line.split()
+            if len(parts) >= 5:
+                ports.append(parts[4])
+        return "\n".join(ports) if ports else "Nessuna porta aperta trovata."
+    except Exception as e:
+        return f"Errore nel recupero porte aperte: {e}"
 
-def get_recent_etc_modifications():
+def get_recent_etc_modifications(days=7):
     try:
-        now = datetime.now()
-        threshold = now - timedelta(days=1)
-        etc_files = []
-
-        for dirpath, _, filenames in os.walk("/etc"):
-            for filename in filenames:
-                filepath = os.path.join(dirpath, filename)
+        cutoff = time.time() - days * 86400
+        modified_files = []
+        for root, dirs, files in os.walk("/etc"):
+            for file in files:
+                path = os.path.join(root, file)
                 try:
-                    mtime = datetime.fromtimestamp(os.path.getmtime(filepath))
-                    if mtime > threshold:
-                        etc_files.append(f"{filepath} - Modificato il: {mtime}")
+                    mtime = os.path.getmtime(path)
+                    if mtime > cutoff:
+                        modified_files.append(f"{path} - modificato il {datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')}")
                 except Exception:
                     continue
-
-        return "\n".join(etc_files) if etc_files else "Nessuna modifica recente trovata in /etc."
+        if modified_files:
+            return "\n".join(modified_files)
+        else:
+            return f"Nessuna modifica nei file /etc negli ultimi {days} giorni."
     except Exception as e:
-        return f"Errore durante il controllo delle modifiche in /etc: {str(e)}"
+        return f"Errore nel recupero modifiche /etc: {e}"
