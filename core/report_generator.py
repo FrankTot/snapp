@@ -8,12 +8,16 @@ from .system_snapshot import (
 )
 
 class PDFReport:
-    def __init__(self, filename="reports/report.pdf"):
+    def __init__(self):
         self.pdf = FPDF()
         self.pdf.set_auto_page_break(auto=True, margin=15)
-        self.filename = filename
+
+        # Nome file con data e ora
+        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.filename = f"reports/report_{now_str}.pdf"
+
         self.pdf.add_page()
-        self.pdf.set_font("Helvetica", size=12)  # Font standard senza problemi
+        self.pdf.set_font("Helvetica", size=12)
         self._add_header()
         self.generate_full_report()
         self.pdf.output(self.filename)
@@ -31,7 +35,6 @@ class PDFReport:
         self.pdf.set_font("Helvetica", "B", 14)
         self.pdf.cell(0, 10, title, ln=True)
         self.pdf.set_font("Helvetica", "", 12)
-        # Rimuoviamo caratteri che non supporta Helvetica
         safe_content = content.encode('ascii', errors='ignore').decode('ascii')
         self.pdf.multi_cell(0, 8, safe_content)
         self.pdf.ln(5)
