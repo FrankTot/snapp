@@ -22,14 +22,23 @@ class PDFReport(FPDF):
         self.ln(10)
 
     def add_section(self, title, content):
-        # Se content è lista, trasformala in stringa
         if isinstance(content, list):
-            content = "\n".join(content)
+            if content and isinstance(content[0], dict):
+                content = self._format_dict_list(content)
+            else:
+                content = "\n".join(str(item) for item in content)
         self.set_font("Helvetica", "B", 14)
         self.cell(0, 10, title, 0, 1)
         self.set_font("Helvetica", size=12)
         self.multi_cell(0, 8, content)
         self.ln()
+
+    def _format_dict_list(self, dict_list):
+        lines = []
+        for d in dict_list:
+            line = ", ".join(f"{k}: {v}" for k, v in d.items())
+            lines.append(line)
+        return "\n".join(lines)
 
     def generate_full_report(self):
         self.add_section("Active Services", get_active_services())
