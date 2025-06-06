@@ -1,4 +1,12 @@
-from gui.main_gui import run_app
+from gui.main_gui import MainGUI
+from PyQt6.QtWidgets import QApplication
+import sys
+
+def main():
+    app = QApplication(sys.argv)
+    window = MainGUI()
+    window.show()
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
-    run_app()
+    main()
