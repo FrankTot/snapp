@@ -21,22 +21,22 @@ class PDFReport:
         self._add_header()
 
     def _prepare_font(self):
-        font_dir = "assets/fonts"
-        font_path = os.path.join(font_dir, "DejaVuSans.ttf")
+    font_dir = "assets/fonts"
+    font_path = os.path.join(font_dir, "DejaVuSans.ttf")
 
-        if not os.path.exists(font_path):
-            os.makedirs(font_dir, exist_ok=True)
-            print("Scarico font Unicode DejaVuSans...")
-            url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
-            try:
-                urllib.request.urlretrieve(url, font_path)
-                print("Font scaricato con successo.")
-            except Exception as e:
-                print("Errore durante il download del font:", e)
-                raise
+    if not os.path.exists(font_path):
+        os.makedirs(font_dir, exist_ok=True)
+        print("Scarico font Unicode DejaVuSans...")
+        url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
+        try:
+            urllib.request.urlretrieve(url, font_path)
+            print("Font scaricato con successo.")
+        except Exception as e:
+            print("Errore durante il download del font:", e)
+            raise
 
-        self.pdf.add_font("DejaVu", "", font_path, uni=True)
-        self.pdf.set_font("DejaVu", "", 14)
+    self.pdf.add_font("DejaVu", "", font_path, uni=True)
+    self.pdf.set_font("DejaVu", "", 14)
 
     def _add_header(self):
         try:
