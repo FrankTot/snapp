@@ -1,3 +1,4 @@
 PyQt6==6.6.1
 fpdf2==2.5.8
 Pillow==10.0.0
+pip3 install PyQt6 --break-system-packages
