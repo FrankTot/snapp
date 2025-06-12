@@ -10,12 +10,14 @@ class PDFReport(FPDF):
         self.set_font("Helvetica", size=12)
         self.add_page()
 
-        self.filename = filename or f"reports/report_{self._timestamp()}.pdf"
+        # Nome file con formato report__gg-mm-aaaa__hh_mm_ss.pdf
+        self.filename = filename or f"reports/report__{self._timestamp()}.pdf"
         self._add_logo()
         self._add_header()
 
     def _timestamp(self):
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
+        # giorno-mese-anno__ora_minuti_secondi
+        return datetime.now().strftime("%d-%m-%Y__%H_%M_%S")
 
     def _add_logo(self):
         logo_path = os.path.join("assets", "logo.png")
