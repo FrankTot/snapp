@@ -1,84 +1,112 @@
+import sys
 import os
-import datetime
-from PyQt5 import QtWidgets, QtCore, QtGui
-from core.report_generator import create_report
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
+    QListWidget, QMessageBox, QHBoxLayout
+)
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
 
-class MainGUI(QtWidgets.QMainWindow):
+from core.report_generator import PDFReport
+from core.system_snapshot import get_reports_list
+import subprocess
+
+class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.current_theme = "light"
+        self.setWindowTitle("SnapAudit - Sistema di Audit")
+        self.setGeometry(100, 100, 800, 600)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f0f2f5;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border-radius: 5px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QListWidget {
+                background-color: white;
+                border: 1px solid #ccc;
+            }
+        """)
         self._setup_ui()
-        self._apply_theme()
-        print("Modulo GUI caricato")
 
     def _setup_ui(self):
-        self.setWindowTitle("Snapp Report Generator")
+        layout = QVBoxLayout()
 
-        # Central widget
-        central_widget = QtWidgets.QWidget()
-        self.setCentralWidget(central_widget)
-
-        # Layout principale
-        layout = QtWidgets.QVBoxLayout()
-        central_widget.setLayout(layout)
-
-        # Switch tema chiaro/scuro
-        self.theme_switch = QtWidgets.QCheckBox("Tema scuro")
-        self.theme_switch.stateChanged.connect(self._toggle_theme)
-        layout.addWidget(self.theme_switch)
-
-        # Bottone genera report con icona
-        self.generate_button = QtWidgets.QPushButton(" Genera Report")
-        icon = QtGui.QIcon.fromTheme("document-save")
-        self.generate_button.setIcon(icon)
-        self.generate_button.clicked.connect(self._generate_report)
-        layout.addWidget(self.generate_button)
-
-        # Label di stato
-        self.status_label = QtWidgets.QLabel("")
-        layout.addWidget(self.status_label)
-
-        # Transizione animata per label stato
-        self.opacity_effect = QtWidgets.QGraphicsOpacityEffect()
-        self.status_label.setGraphicsEffect(self.opacity_effect)
-        self.anim = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(0)
-        self.anim.setEndValue(1)
-
-    def _toggle_theme(self, state):
-        self.current_theme = "dark" if state == QtCore.Qt.Checked else "light"
-        self._apply_theme()
-
-    def _apply_theme(self):
-        if self.current_theme == "dark":
-            self.setStyleSheet("""
-                QMainWindow { background-color: #2b2b2b; color: #f0f0f0; }
-                QPushButton { background-color: #444; color: #eee; }
-                QLabel { color: #ddd; }
-                QCheckBox { color: #ccc; }
-            """)
+        # Logo
+        logo_label = QLabel()
+        pixmap = QPixmap("assets/logo.png")
+        if pixmap.isNull():
+            logo_label.setText("Logo non trovato")
         else:
-            self.setStyleSheet("""
-                QMainWindow { background-color: #fff; color: #000; }
-                QPushButton { background-color: #ddd; color: #000; }
-                QLabel { color: #222; }
-                QCheckBox { color: #111; }
-            """)
+            scaled_pixmap = pixmap.scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(logo_label)
 
-    def _generate_report(self):
+        # Lista report precedenti
+        self.report_list = QListWidget()
+        self._load_report_list()
+        layout.addWidget(self.report_list)
+
+        # Bottoni
+        button_layout = QHBoxLayout()
+
+        self.generate_btn = QPushButton("📝 Genera Report")
+        self.generate_btn.clicked.connect(self.generate_pdf)
+        button_layout.addWidget(self.generate_btn)
+
+        self.view_btn = QPushButton("📄 Visualizza Report")
+        self.view_btn.clicked.connect(self.view_selected_report)
+        button_layout.addWidget(self.view_btn)
+
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+    def _load_report_list(self):
+        self.report_list.clear()
+        reports = get_reports_list()
+        if reports:
+            for rpt in sorted(reports, reverse=True):
+                self.report_list.addItem(rpt)
+        else:
+            self.report_list.addItem("Nessun report trovato")
+
+    def generate_pdf(self):
         try:
-            # Creazione nome file con data leggibile
-            now = datetime.datetime.now()
-            date_str = now.strftime("%d-%m-%Y__%H-%M-%S")
-            filename = f"reports/report_{date_str}.pdf"
-
-            # Creo report passando filename
-            create_report(filename, icon=True)
-
-            # Messaggio con animazione fade-in
-            self.status_label.setText(f"Report generato con successo: {filename}")
-            self.anim.start()
+            filename = None
+            pdf = PDFReport(filename=filename)
+            pdf.generate_full_report()
+            self._load_report_list()
+            QMessageBox.information(self, "Successo", "✅ Report generato correttamente!")
         except Exception as e:
-            self.status_label.setText(f"Errore durante la generazione del report: {e}")
-            self.anim.start()
+            QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
+
+    def view_selected_report(self):
+        selected = self.report_list.currentItem()
+        if not selected or "Nessun report trovato" in selected.text():
+            QMessageBox.warning(self, "Attenzione", "Seleziona un report dalla lista.")
+            return
+        report_path = os.path.join("reports", selected.text())
+        if not os.path.exists(report_path):
+            QMessageBox.warning(self, "Errore", "File report non trovato.")
+            return
+        try:
+            if sys.platform.startswith('linux'):
+                subprocess.run(['xdg-open', report_path], check=False)
+            elif sys.platform == 'win32':
+                os.startfile(report_path)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', report_path], check=False)
+            else:
+                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato.")
+        except Exception as e:
+            QMessageBox.critical(self, "Errore", f"Errore nell'aprire il report:\n{str(e)}")
