@@ -10,13 +10,11 @@ class PDFReport(FPDF):
         self.set_font("Helvetica", size=12)
         self.add_page()
 
-        # Nome file con formato report__gg-mm-aaaa__hh_mm_ss.pdf
         self.filename = filename or f"reports/report__{self._timestamp()}.pdf"
         self._add_logo()
         self._add_header()
 
     def _timestamp(self):
-        # giorno-mese-anno__ora_minuti_secondi
         return datetime.now().strftime("%d-%m-%Y__%H_%M_%S")
 
     def _add_logo(self):
@@ -27,29 +25,39 @@ class PDFReport(FPDF):
 
     def _add_header(self):
         self.set_font("Helvetica", "B", 16)
-        self.set_text_color(33, 37, 41)  # dark gray
+        self.set_text_color(0, 102, 204)  # blu acceso
         self.cell(0, 10, "SnapAudit Report", 0, 1, 'C')
         self.ln(10)
 
     def add_section(self, title, content):
+        # Titolo sezione con colore più vivo
         self.set_font("Helvetica", "B", 14)
-        self.set_text_color(52, 58, 64)
+        self.set_text_color(0, 51, 102)  # blu scuro
         self.cell(0, 10, title, 0, 1)
+        
         self.set_font("Helvetica", size=12)
         self.set_text_color(0, 0, 0)
 
         if isinstance(content, list) and content and isinstance(content[0], dict):
             headers = list(content[0].keys())
             col_width = self.w / len(headers) - 10
-            self.set_fill_color(200, 200, 200)
+
+            # Header tabella con sfondo azzurro
+            self.set_fill_color(0, 102, 204)
+            self.set_text_color(255, 255, 255)  # bianco testo
             for h in headers:
                 self.cell(col_width, 10, h, 1, 0, 'C', True)
             self.ln()
-            self.set_fill_color(245, 245, 245)
+
+            # Righe tabella alternate con sfondi chiari
+            fill = False
+            self.set_text_color(0, 0, 0)
             for row in content:
+                self.set_fill_color(230, 240, 255) if fill else self.set_fill_color(255, 255, 255)
                 for v in row.values():
-                    self.cell(col_width, 10, str(v), 1)
+                    self.cell(col_width, 10, str(v), 1, 0, 'L', fill)
                 self.ln()
+                fill = not fill
         else:
             if isinstance(content, list):
                 content = "\n".join(str(item) for item in content)
