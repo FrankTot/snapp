@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
     QFileDialog, QListWidget, QMessageBox, QHBoxLayout
 )
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QFont, QColor, QPalette
 from PyQt6.QtCore import Qt
 
 from core.report_generator import PDFReport
@@ -16,6 +16,26 @@ class MainGUI(QWidget):
         super().__init__()
         self.setWindowTitle("SnapAudit - Sistema di Audit")
         self.setGeometry(100, 100, 800, 600)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f0f2f5;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border-radius: 5px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QListWidget {
+                background-color: white;
+                border: 1px solid #ccc;
+            }
+        """)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -40,34 +60,33 @@ class MainGUI(QWidget):
         # Bottoni
         button_layout = QHBoxLayout()
 
-        self.generate_btn = QPushButton("Genera Report")
+        self.generate_btn = QPushButton("📝 Genera Report")
         self.generate_btn.clicked.connect(self.generate_pdf)
         button_layout.addWidget(self.generate_btn)
 
-        self.view_btn = QPushButton("Visualizza Report Selezionato")
+        self.view_btn = QPushButton("📄 Visualizza Report")
         self.view_btn.clicked.connect(self.view_selected_report)
         button_layout.addWidget(self.view_btn)
 
         layout.addLayout(button_layout)
-
         self.setLayout(layout)
 
     def _load_report_list(self):
         self.report_list.clear()
         reports = get_reports_list()
         if reports:
-            for rpt in reports:
+            for rpt in sorted(reports, reverse=True):
                 self.report_list.addItem(rpt)
         else:
             self.report_list.addItem("Nessun report trovato")
 
     def generate_pdf(self):
         try:
-            filename = None  # Lasciamo che il PDFReport crei il nome con data/ora
+            filename = None
             pdf = PDFReport(filename=filename)
             pdf.generate_full_report()
             self._load_report_list()
-            QMessageBox.information(self, "Successo", "Report generato correttamente!")
+            QMessageBox.information(self, "Successo", "✅ Report generato correttamente!")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
 
@@ -88,13 +107,6 @@ class MainGUI(QWidget):
             elif sys.platform == 'darwin':
                 subprocess.run(['open', report_path], check=False)
             else:
-                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato per l'apertura automatica del PDF.")
+                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato.")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Errore nell'aprire il report:\n{str(e)}")
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainGUI()
-    window.show()
-    sys.exit(app.exec())
