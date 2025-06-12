@@ -1,6 +1,7 @@
 import os
 import datetime
 from PyQt5 import QtWidgets, QtCore, QtGui
+from core.report_generator import create_report
 
 class MainGUI(QtWidgets.QMainWindow):
     def __init__(self):
@@ -13,29 +14,35 @@ class MainGUI(QtWidgets.QMainWindow):
     def _setup_ui(self):
         self.setWindowTitle("Snapp Report Generator")
 
+        # Central widget
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
 
+        # Layout principale
         layout = QtWidgets.QVBoxLayout()
         central_widget.setLayout(layout)
 
+        # Switch tema chiaro/scuro
         self.theme_switch = QtWidgets.QCheckBox("Tema scuro")
         self.theme_switch.stateChanged.connect(self._toggle_theme)
         layout.addWidget(self.theme_switch)
 
+        # Bottone genera report con icona
         self.generate_button = QtWidgets.QPushButton(" Genera Report")
         icon = QtGui.QIcon.fromTheme("document-save")
         self.generate_button.setIcon(icon)
         self.generate_button.clicked.connect(self._generate_report)
         layout.addWidget(self.generate_button)
 
+        # Label di stato
         self.status_label = QtWidgets.QLabel("")
         layout.addWidget(self.status_label)
 
+        # Transizione animata per label stato
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect()
         self.status_label.setGraphicsEffect(self.opacity_effect)
         self.anim = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.anim.setDuration(600)
+        self.anim.setDuration(500)
         self.anim.setStartValue(0)
         self.anim.setEndValue(1)
 
@@ -61,14 +68,15 @@ class MainGUI(QtWidgets.QMainWindow):
 
     def _generate_report(self):
         try:
+            # Creazione nome file con data leggibile
             now = datetime.datetime.now()
             date_str = now.strftime("%d-%m-%Y__%H-%M-%S")
             filename = f"reports/report_{date_str}.pdf"
 
-            from core.report_generator import PDFReport
-            pdf = PDFReport(filename)
-            pdf.generate_full_report()
+            # Creo report passando filename
+            create_report(filename, icon=True)
 
+            # Messaggio con animazione fade-in
             self.status_label.setText(f"Report generato con successo: {filename}")
             self.anim.start()
         except Exception as e:
