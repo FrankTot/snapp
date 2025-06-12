@@ -13,7 +13,7 @@ class PDFReport(FPDF):
         super().__init__()
         self.set_auto_page_break(auto=True, margin=15)
 
-        # ✅ Aggiunge il font DejaVu (supporto Unicode completo)
+        # Usa font DejaVu (font ttf in assets/DejaVuSans.ttf)
         font_path = "assets/DejaVuSans.ttf"
         self.add_font("DejaVu", "", font_path, uni=True)
         self.add_font("DejaVu", "B", font_path, uni=True)
