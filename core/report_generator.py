@@ -1,6 +1,5 @@
 from fpdf import FPDF
 from datetime import datetime
-import os
 from .system_snapshot import (
     get_active_services,
     get_logged_users,
@@ -13,11 +12,8 @@ class PDFReport(FPDF):
         super().__init__()
         self.set_auto_page_break(auto=True, margin=15)
 
-        # Usa font DejaVu (font ttf in assets/DejaVuSans.ttf)
-        font_path = "assets/DejaVuSans.ttf"
-        self.add_font("DejaVu", "", font_path, uni=True)
-        self.add_font("DejaVu", "B", font_path, uni=True)
-        self.set_font("DejaVu", "", 12)
+        # Usa font base predefinito, senza aggiungere DejaVu
+        self.set_font("Helvetica", "", 12)
 
         self.add_page()
         self._add_header()
@@ -28,7 +24,7 @@ class PDFReport(FPDF):
         return datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
 
     def _add_header(self):
-        self.set_font("DejaVu", "B", 16)
+        self.set_font("Helvetica", "B", 16)
         self.set_text_color(30, 30, 30)
         self.cell(0, 10, "📋 SnapAudit Report", 0, 1, 'C')
         self.ln(10)
@@ -40,11 +36,11 @@ class PDFReport(FPDF):
             else:
                 content = "\n".join(str(item) for item in content)
 
-        self.set_font("DejaVu", "B", 14)
+        self.set_font("Helvetica", "B", 14)
         self.set_text_color(40, 90, 160)
         self.cell(0, 10, f"🛡 {title}", 0, 1)
         self.set_text_color(0, 0, 0)
-        self.set_font("DejaVu", "", 11)
+        self.set_font("Helvetica", "", 11)
         self.multi_cell(0, 8, content)
         self.ln()
 
