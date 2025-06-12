@@ -1,14 +1,13 @@
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 import sys
 import os
 from gui.main_gui import MainGUI
 
 def main():
-    # Crea la cartella reports se non esiste
     if not os.path.exists("reports"):
         os.makedirs("reports")
 
-    app = QApplication(sys.argv)  # CREAZIONE QApplication PRIMA DI TUTTO
+    app = QApplication(sys.argv)
     window = MainGUI()
     window.show()
     sys.exit(app.exec())
