@@ -19,19 +19,16 @@ class MainGUI(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout()
         central_widget.setLayout(layout)
 
-        # Switch tema chiaro/scuro
         self.theme_switch = QtWidgets.QCheckBox("Tema scuro")
         self.theme_switch.stateChanged.connect(self._toggle_theme)
         layout.addWidget(self.theme_switch)
 
-        # Bottone genera report con icona
         self.generate_button = QtWidgets.QPushButton(" Genera Report")
         icon = QtGui.QIcon.fromTheme("document-save")
         self.generate_button.setIcon(icon)
         self.generate_button.clicked.connect(self._generate_report)
         layout.addWidget(self.generate_button)
 
-        # Label di stato con opacità e animazione fade-in
         self.status_label = QtWidgets.QLabel("")
         layout.addWidget(self.status_label)
 
