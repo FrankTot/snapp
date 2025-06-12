@@ -2,9 +2,9 @@ import sys
 import os
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
-    QFileDialog, QListWidget, QMessageBox, QHBoxLayout
+    QListWidget, QMessageBox, QHBoxLayout, QFrame
 )
-from PyQt6.QtGui import QPixmap, QFont, QColor, QPalette
+from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt
 
 from core.report_generator import PDFReport
@@ -15,67 +15,85 @@ class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SnapAudit - Sistema di Audit")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 600)
         self.setStyleSheet("""
             QWidget {
-                background-color: #f0f2f5;
+                background-color: #2b2b2b;
+                color: #f0f0f0;
                 font-family: 'Segoe UI', sans-serif;
-                font-size: 14px;
             }
             QPushButton {
-                background-color: #4CAF50;
+                background-color: #3c3f41;
                 color: white;
-                border-radius: 5px;
+                border: 1px solid #5c5c5c;
                 padding: 8px 16px;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #505357;
             }
             QListWidget {
-                background-color: white;
-                border: 1px solid #ccc;
+                background-color: #353535;
+                border: 1px solid #5c5c5c;
+            }
+            QLabel {
+                font-size: 14px;
             }
         """)
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout()
+        main_layout = QHBoxLayout(self)
+
+        # Sidebar
+        sidebar = QVBoxLayout()
+        sidebar_frame = QFrame()
+        sidebar_frame.setFixedWidth(200)
+        sidebar_frame.setLayout(sidebar)
+        sidebar_frame.setStyleSheet("background-color: #1e1e1e;")
 
         # Logo
         logo_label = QLabel()
         pixmap = QPixmap("assets/logo.png")
-        if pixmap.isNull():
-            logo_label.setText("Logo non trovato")
+        if not pixmap.isNull():
+            logo_label.setPixmap(pixmap.scaled(180, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
-            scaled_pixmap = pixmap.scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
+            logo_label.setText("[Logo non trovato]")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(logo_label)
+        sidebar.addWidget(logo_label)
 
-        # Lista report precedenti
+        # Buttons
+        self.generate_btn = QPushButton("⚙️  Genera Report")
+        self.generate_btn.clicked.connect(self.generate_pdf)
+        sidebar.addWidget(self.generate_btn)
+
+        self.view_btn = QPushButton("📄  Visualizza Report")
+        self.view_btn.clicked.connect(self.view_selected_report)
+        sidebar.addWidget(self.view_btn)
+
+        sidebar.addStretch()
+
+        # Content Area
+        content_layout = QVBoxLayout()
+
+        title = QLabel("📝 Report Generati")
+        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        content_layout.addWidget(title)
+
         self.report_list = QListWidget()
         self._load_report_list()
-        layout.addWidget(self.report_list)
+        content_layout.addWidget(self.report_list)
 
-        # Bottoni
-        button_layout = QHBoxLayout()
-
-        self.generate_btn = QPushButton("📝 Genera Report")
-        self.generate_btn.clicked.connect(self.generate_pdf)
-        button_layout.addWidget(self.generate_btn)
-
-        self.view_btn = QPushButton("📄 Visualizza Report")
-        self.view_btn.clicked.connect(self.view_selected_report)
-        button_layout.addWidget(self.view_btn)
-
-        layout.addLayout(button_layout)
-        self.setLayout(layout)
+        # Combine Layouts
+        main_layout.addWidget(sidebar_frame)
+        main_layout.addLayout(content_layout)
 
     def _load_report_list(self):
         self.report_list.clear()
         reports = get_reports_list()
         if reports:
-            for rpt in sorted(reports, reverse=True):
+            for rpt in reports:
                 self.report_list.addItem(rpt)
         else:
             self.report_list.addItem("Nessun report trovato")
@@ -86,7 +104,7 @@ class MainGUI(QWidget):
             pdf = PDFReport(filename=filename)
             pdf.generate_full_report()
             self._load_report_list()
-            QMessageBox.information(self, "Successo", "✅ Report generato correttamente!")
+            QMessageBox.information(self, "Successo", "Report generato correttamente!")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
 
@@ -107,6 +125,12 @@ class MainGUI(QWidget):
             elif sys.platform == 'darwin':
                 subprocess.run(['open', report_path], check=False)
             else:
-                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato.")
+                QMessageBox.warning(self, "Errore", "Sistema operativo non supportato per l'apertura automatica del PDF.")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Errore nell'aprire il report:\n{str(e)}")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainGUI()
+    window.show()
+    sys.exit(app.exec())
