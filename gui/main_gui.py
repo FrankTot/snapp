@@ -13,11 +13,9 @@ class MainGUI(QtWidgets.QMainWindow):
     def _setup_ui(self):
         self.setWindowTitle("Snapp Report Generator")
 
-        # Central widget
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
 
-        # Layout principale
         layout = QtWidgets.QVBoxLayout()
         central_widget.setLayout(layout)
 
@@ -33,16 +31,14 @@ class MainGUI(QtWidgets.QMainWindow):
         self.generate_button.clicked.connect(self._generate_report)
         layout.addWidget(self.generate_button)
 
-        # Label di stato
+        # Label di stato con opacità e animazione fade-in
         self.status_label = QtWidgets.QLabel("")
         layout.addWidget(self.status_label)
 
-        # Transizione animata per label stato
-        self.anim = QtCore.QPropertyAnimation(self.status_label, b"opacity")
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect()
         self.status_label.setGraphicsEffect(self.opacity_effect)
-        self.anim.setTargetObject(self.opacity_effect)
-        self.anim.setDuration(500)
+        self.anim = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.anim.setDuration(600)
         self.anim.setStartValue(0)
         self.anim.setEndValue(1)
 
@@ -68,16 +64,14 @@ class MainGUI(QtWidgets.QMainWindow):
 
     def _generate_report(self):
         try:
-            # Creazione nome file con data leggibile
             now = datetime.datetime.now()
             date_str = now.strftime("%d-%m-%Y__%H-%M-%S")
             filename = f"reports/report_{date_str}.pdf"
 
-            # Qui chiami il metodo per creare il report (supponiamo core.create_report)
-            from core import create_report
-            create_report(filename, icon=True)  # icon=True per aggiungere icone nel report
+            from core.report_generator import PDFReport
+            pdf = PDFReport(filename)
+            pdf.generate_full_report()
 
-            # Messaggio con animazione fade-in
             self.status_label.setText(f"Report generato con successo: {filename}")
             self.anim.start()
         except Exception as e:
