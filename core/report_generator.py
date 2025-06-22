@@ -60,9 +60,9 @@ class PDFReport(FPDF):
             self.multi_cell(0, 8, content)
         self.ln()
 
-    def generate_full_report(self):
+    def generate_full_report(self, days_for_etc_mods=7):
         self.add_section("Active Services", get_active_services())
         self.add_section("Logged In Users", get_logged_users())
         self.add_section("Open Ports", get_open_ports())
-        self.add_section("Recent /etc Modifications", get_recent_etc_modifications())
+        self.add_section(f"Recent /etc Modifications (last {days_for_etc_mods} days)", get_recent_etc_modifications(days=days_for_etc_mods))
         self.output(self.filename)

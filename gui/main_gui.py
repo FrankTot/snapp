@@ -2,7 +2,8 @@ import sys
 import os
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel,
-    QFileDialog, QListWidget, QMessageBox, QHBoxLayout, QCheckBox
+    QFileDialog, QListWidget, QMessageBox, QHBoxLayout, QCheckBox,
+    QSpinBox, QFormLayout
 )
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
@@ -37,6 +38,15 @@ class MainGUI(QWidget):
         self.theme_toggle = QCheckBox("Tema Scuro")
         self.theme_toggle.stateChanged.connect(self.toggle_theme)
         layout.addWidget(self.theme_toggle)
+
+        # Opzioni di generazione report
+        options_layout = QFormLayout()
+        self.days_spinbox = QSpinBox()
+        self.days_spinbox.setRange(1, 365)
+        self.days_spinbox.setValue(7)
+        self.days_spinbox.setToolTip("Numero di giorni per cercare modifiche recenti in /etc")
+        options_layout.addRow("Giorni modifiche /etc:", self.days_spinbox)
+        layout.addLayout(options_layout)
 
         # Lista report
         self.report_list = QListWidget()
@@ -120,11 +130,14 @@ class MainGUI(QWidget):
 
     def generate_pdf(self):
         try:
-            filename = None
+            filename = None # Verrà generato automaticamente da PDFReport
+            days_for_etc_mods = self.days_spinbox.value()
+
             pdf = PDFReport(filename=filename)
-            pdf.generate_full_report()
+            pdf.generate_full_report(days_for_etc_mods=days_for_etc_mods)
+
             self._load_report_list()
-            QMessageBox.information(self, "Successo", "✅ Report generato correttamente!")
+            QMessageBox.information(self, "Successo", f"✅ Report generato correttamente!\nModifiche /etc cercate negli ultimi {days_for_etc_mods} giorni.")
         except Exception as e:
             QMessageBox.critical(self, "Errore", f"Errore durante la generazione del report:\n{str(e)}")
 
